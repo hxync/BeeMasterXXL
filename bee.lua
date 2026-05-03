@@ -33,10 +33,7 @@ local function main()
     io.write("请输入需要突变的蜜蜂:")
     local species = io.read()
     if mutations[species] then
-        local suc,err = pcall(strategy.task,species)
-        if not suc then
-            error("错误: " .. err)
-        end
+        strategy.task(species)
     else
         error("未发现突变路径")
     end

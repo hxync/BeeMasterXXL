@@ -169,16 +169,16 @@ function M.charge()
     local previousPosition = {x=position.x, y=position.y, z=position.z}
     local previousDirection = {x=direction.x, z=direction.z}
     if computer.energy() < 5000 then
-        robot.moveYTo(2)
-        robot.moveXZTo(0,0)
-        robot.moveYTo(1)
+        M.moveYTo(2)
+        M.moveXZTo(0,0)
+        M.moveYTo(1)
         local targetEnergy = computer.maxEnergy() - 100
         while computer.energy() < targetEnergy do
             os.sleep(0.5)
         end
-        robot.moveYTo(2)
-        robot.moveXZTo(previousPosition.x, previousPosition.z)
-        robot.moveYTo(previousPosition.y)
+        M.moveYTo(2)
+        M.moveXZTo(previousPosition.x, previousPosition.z)
+        M.moveYTo(previousPosition.y)
         M.turnTo(previousDirection.x, previousDirection.z)
     end
     return true
