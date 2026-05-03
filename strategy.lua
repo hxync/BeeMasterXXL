@@ -882,7 +882,6 @@ function M.newSpecies(species, mutation)--突变新品种并优化基因
     --纯化突变产生的基因
     while true do
         if not mutatedBeeList[1] then
-            print("纯化过程发生了基因丢失产生了回退，因为概率过小我测试的时候没能触发。\n如果你看到了这个消息，请务必告诉我程序是否发生了错误。——火山盐奶茶")
             beeData.updateUsingPrincess(princessSlot)
             goto GET_PARENT_BEES
         end
@@ -1077,9 +1076,10 @@ function M.task(species)--制定突变链
         for i, condition in pairs(requiredDimension) do
             print(string.format("  - %s蜂突变需要维度%s", mutationChain[i][2].name, condition))
         end
-        if not confirmContinue() then
+        return
+        --[[if not confirmContinue() then
             return
-        end
+        end]]
     end
     if next(requiredDate) then
         print("以下突变需要在对应日期进行：")
