@@ -1,7 +1,7 @@
 local component = require("component")
 --local serialization = require("serialization")
 
-local strategy, mutations
+local strategy, mutations, device
 
 local function initialize()
     if not component.inventory_controller then
@@ -25,6 +25,7 @@ local function initialize()
     end
     print("加载中...")
     mutations = require("mutations")
+    device = require("device")
     strategy = require("strategy")
 end
 
@@ -46,6 +47,7 @@ if suc then
     suc, err = pcall(main)
     if not suc then
         print("发生错误: " .. err)
+        device.destruct()
     end
 else
     print("发生错误: " .. err)

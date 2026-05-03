@@ -67,6 +67,10 @@ end
 
 function M.destruct()
     apiary.destruct()
+    bot.moveYTo(2)
+    bot.moveXZTo(0,0)
+    bot.moveYTo(1)
+    bot.turnTo(0,-1)
 end
 
 return M

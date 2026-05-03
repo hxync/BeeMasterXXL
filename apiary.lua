@@ -349,9 +349,6 @@ function M.destruct()
         robot.select(slot)
         upgrade_me.sendItems()
     end
-    bot.moveYTo(2)
-    bot.moveXZTo(0,0)
-    bot.moveYTo(1)
 end
 
 return M
