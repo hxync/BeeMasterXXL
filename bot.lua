@@ -1,6 +1,7 @@
 --管理机器人的物品栏与位置
 ---@diagnostic disable: inject-field, undefined-field, assign-type-mismatch, duplicate-set-field, need-check-nil
 local component = require("component")
+local computer = require("computer")
 local robot = require("robot")
 local event = require("event")
 
@@ -18,7 +19,7 @@ end
 
 --监听inventory_changed事件，维护物品栏映射表
 M.inventory, M.inventoryLabel = {}, nil
-local function updateInventory(_, slot)
+function M.updateInventory(_, slot)
     local stack = inventory_controller.getStackInInternalSlot(slot)
     if stack then
         local success, result = pcall(analyzeGenes, stack)
@@ -35,7 +36,7 @@ local function updateInventory(_, slot)
     os.sleep(0)
     return true
 end
-event.listen("inventory_changed", updateInventory)
+event.listen("inventory_changed", M.updateInventory)
 
 --robot库物品栏操作函数重定向
 local t, e = robot.transferTo, inventory_controller.equip
@@ -163,6 +164,27 @@ function M.moveYTo(targetY)
     end
 end
 
+--充电
+function M.charge()
+    local previousPosition = {x=position.x, y=position.y, z=position.z}
+    local previousDirection = {x=direction.x, z=direction.z}
+    if computer.energy() < 5000 then
+        robot.moveYTo(2)
+        robot.moveXZTo(0,0)
+        robot.moveYTo(1)
+        local targetEnergy = computer.maxEnergy() - 100
+        while computer.energy() < targetEnergy do
+            os.sleep(0.5)
+        end
+        robot.moveYTo(2)
+        robot.moveXZTo(previousPosition.x, previousPosition.z)
+        robot.moveYTo(previousPosition.y)
+        M.turnTo(previousDirection.x, previousDirection.z)
+    end
+    return true
+end
+event.timer(120, M.charge, math.huge)
+
 --物品栏管理函数
 function M.getEmptySlotCount()
     local count = 0
@@ -212,17 +234,19 @@ function M.clearItem(inventoryLabel)
     end
 end
 function M.checkItem(filter, request)
-    if not filter or not (filter.name or filter.tag) then
+    if not filter or not filter.name then
         error("错误的调用bot.checkItem()")
     end
     --[神秘小补丁
     if filter.tag then
-        local speciesGenes = analyzeGenes({name="Forestry:beePrincessGE",tag=filter.tag,individual={}}).species[1]
-        database.set(1, "Forestry:beeDroneGE", 0, '{IsAnalyzed:1b,Genome:{Chromosomes:[0:{Slot:0b,UID0:"'..speciesGenes..'",UID1:"'..speciesGenes..'"}]}}')
-        local droneLabel = database.get(1).label
-        database.set(1, "Forestry:beePrincessGE", 0, '{IsAnalyzed:1b,Genome:{Chromosomes:[0:{Slot:0b,UID0:"'..speciesGenes..'",UID1:"'..speciesGenes..'"}]}}')
-        local princessLabel = database.get(1).label
-        return M.checkItemByTag({tag=filter.tag,label=droneLabel}, request) or M.checkItemByTag({tag=filter.tag,label=princessLabel}, request)
+        if filter.name == "Forestry:beeDroneGE" or filter.name == "Forestry:beePrincessGE" then
+            local speciesGenes = analyzeGenes({name=filter.name,tag=filter.tag,individual={}}).species
+            database.set(1, filter.name, 0, '{IsAnalyzed:1b,Genome:{Chromosomes:[0:{Slot:0b,UID0:"'..speciesGenes[1]..'",UID1:"'..speciesGenes[2]..'"}]}}')
+            local label = database.get(1).label
+            return M.checkItemByTag({tag=filter.tag,label=label}, request)
+        else
+            error("错误的调用bot.checkItem()：不支持tag查询的物品")
+        end
     end
     --]]
     local function isEqual(stack, _filter)
@@ -259,7 +283,9 @@ function M.checkItem(filter, request)
         return targetSlot
     end
     local stackList = upgrade_me.getItemsInNetwork(filter)
-    if not stackList[1] then
+    if not stackList then
+        error("超出ME网络范围")
+    elseif not stackList[1] then
         return nil
     elseif request == 0 then
         return true
@@ -376,7 +402,7 @@ end
 
 --初始化物品栏映射表
 for i=1,inventorySize do
-    updateInventory(nil, i)
+    M.updateInventory(nil, i)
 end
 M.equip()
 M.equip()

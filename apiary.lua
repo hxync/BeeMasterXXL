@@ -25,7 +25,7 @@ do
             apiaryList[i] = {
                 biome = b.name,
                 biomeTypes = b.biomeTypes,
-                temperature = environment.getTemperatureLevel(b.temperature),
+                temperature = environment.getTemperatureLevel(b.temperature, b.biomeTypes),
                 humidity = environment.getHumidityLevel(b.rainfall)
             }
         end
@@ -39,7 +39,9 @@ local worldAcceleratorLocationList = {{1,2},{2,4},{4,3},{3,1}}
 
 --移动蜂箱、基石
 local function setupApiary(location, damage, targetFoundation)
-    if not location or not apiaryList[location] or not damage then
+    if location == 0 then
+        damage = damage or 0
+    elseif not location or not apiaryList[location] or not damage then
         error(string.format("错误的调用setupApiary(%s, %s)", tostring(location), tostring(damage)))
     end
     local moveLocation = apiaryLocation ~= location --位置是否需要移动
@@ -66,39 +68,46 @@ local function setupApiary(location, damage, targetFoundation)
         bot.moveYTo(2)
         if worldAcceleratorlocation ~= 0 then
             bot.moveXZTo(table.unpack(worldAcceleratorLocationList[worldAcceleratorlocation]))
+            local previousLabel = bot.inventoryLabel
+            bot.inventoryLabel = "apiary.apiculture"
             tools.swingDown()
+            bot.inventoryLabel = previousLabel
         end
-        bot.moveXZTo(table.unpack(worldAcceleratorLocationList[targetWALocation]))
-        doUntil(function()
-            robot.select(
-                doUntil(function()
-                    return bot.checkItem({name = "gregtech:gt.blockmachines", damage = 11099 + worldAccelerator_tier}, 1)
-                end, "缺少世界加速器")
-            )
-            return robot.placeDown()
-        end, "放置世界加速器失败")
+        if location ~= 0 then
+            bot.moveXZTo(table.unpack(worldAcceleratorLocationList[targetWALocation]))
+            doUntil(function()
+                robot.select(
+                    doUntil(function()
+                        return bot.checkItem({name = "gregtech:gt.blockmachines", damage = 11099 + worldAccelerator_tier}, 1)
+                    end, "缺少世界加速器")
+                )
+                return robot.placeDown()
+            end, "放置世界加速器失败")
+        end
     end
     --放置蜂箱与基石
-    if changeFoundation and targetFoundation then
-        bot.moveYTo(2)
-        bot.moveXZTo(table.unpack(apiaryLocationList[location]))
-        bot.moveYTo(1)
-        if robot.detectDown() then
-            tools.swingDown()
+    if location ~= 0 then
+        if changeFoundation and targetFoundation then
+            bot.moveYTo(2)
+            bot.moveXZTo(table.unpack(apiaryLocationList[location]))
+            bot.moveYTo(1)
+            if robot.detectDown() then
+                tools.swingDown()
+            end
+            tools.placeDown(targetFoundation)
         end
-        tools.placeDown(targetFoundation)
-    end
-    if changeApiary then
-        bot.moveYTo(2)
-        bot.moveXZTo(table.unpack(apiaryLocationList[location]))
-        doUntil(function()
-            robot.select(
-                doUntil(function()
-                    return bot.checkItem({name = "Forestry:apiculture", damage = damage}, 1)
-                end, "缺少"..(damage == 0 and "蜂箱" or "简易蜂房"))
-            )
-            return robot.placeDown()
-        end, "放置蜂箱失败")
+        if changeApiary then
+            bot.moveYTo(2)
+            bot.moveXZTo(table.unpack(apiaryLocationList[location]))
+            doUntil(function()
+                robot.select(
+                    doUntil(function()
+                        return bot.checkItem({name = "Forestry:apiculture", damage = damage}, 1)
+                    end, "缺少"..(damage == 0 and "蜂箱" or "简易蜂房"))
+                )
+                return robot.placeDown()
+            end, "放置蜂箱失败")
+        end
     end
     apiaryLocation = location
     apiaryDamage = damage
@@ -129,7 +138,9 @@ function M.checkNextGeneration(princessSlot, mutation)
     local Tmin, Tmax = environment.getTemperatureRange(bot.inventory[princessSlot].temperature[1], bot.inventory[princessSlot].temperatureTolerance[1])
     local Hmin, Hmax = environment.getHumidityRange(bot.inventory[princessSlot].humidity[1], bot.inventory[princessSlot].humidityTolerance[1])
     for location, apiary in pairs(apiaryList) do
-        if apiary.temperature >= Tmin and apiary.temperature <= Tmax and apiary.humidity >= Hmin and apiary.humidity <= Hmax then
+        if apiary.temperature == bot.inventory[princessSlot].temperature[1] and apiary.humidity == bot.inventory[princessSlot].humidity[1] then
+            table.insert(availableApiaryList, 1, location)--若需要更换世界加速器位置，优先选择最适环境的蜂箱位置
+        elseif apiary.temperature >= Tmin and apiary.temperature <= Tmax and apiary.humidity >= Hmin and apiary.humidity <= Hmax then
             table.insert(availableApiaryList, location)
         end
     end
@@ -185,6 +196,7 @@ function M.nextGeneration(princessSlot, droneSlot, mutation)
     local previousLabel = bot.inventoryLabel
     bot.inventoryLabel = "apiary.nextGeneration()"
     setupApiary(availableApiary, requiredApiaryDamage, type(mutation) == "table" and mutation.foundation)
+    local previousFertility = bot.inventory[princessSlot].fertility[1]
     bot.moveYTo(2)
     bot.moveXZTo(table.unpack(apiaryLocationList[availableApiary]))
     --培育蜂后
@@ -193,10 +205,11 @@ function M.nextGeneration(princessSlot, droneSlot, mutation)
         error("apiary.nextGeneration()转移公主蜂失败")
     end
     robot.select(droneSlot)
+    bot.inventory[droneSlot].size = bot.inventory[droneSlot].size - 1
     if not inventory_controller.dropIntoSlot(0, 2, 1) then
         error("apiary.nextGeneration()转移工蜂失败")
     end
-    bot.selectUsedSlot()
+    bot.selectUsedSlot()--不用robot.select(1)是为了确保相同物品能够堆叠
     while true do
         local info = inventory_controller.getStackInSlot(0, 1)
         if not info or info.name == "Forestry:beeQueenGE" then
@@ -230,7 +243,11 @@ function M.nextGeneration(princessSlot, droneSlot, mutation)
         os.sleep(1)
     end
     --处理子代蜜蜂与产物
+    local newDronesCount = 0
     for _,slot in ipairs(bot.getItemsWithLabel("apiary.nextGeneration()")) do
+        if bot.inventory[slot] and bot.inventory[slot].type == "beeDrone" then
+            newDronesCount = newDronesCount + bot.inventory[slot].size
+        end
         if bot.inventory[slot] and (bot.inventory[slot].type == "beePrincess" or bot.inventory[slot].type == "beeDrone") then
             bot.inventory[slot].inventoryLabel = previousLabel
         else
@@ -239,6 +256,16 @@ function M.nextGeneration(princessSlot, droneSlot, mutation)
                 upgrade_me.sendItems()
                 return robot.count(slot) == 0
             end, "ME网络存储空间不足")
+        end
+    end
+    if newDronesCount < previousFertility then
+        for _,slot in pairs(bot.getItemsWithLabel(previousLabel)) do--size变化不会触发inventory_changed事件，需要手动更新数量
+            local count = bot.inventory[slot].size or 0
+            bot.inventory[slot].size = robot.count(slot)
+            newDronesCount = newDronesCount + bot.inventory[slot].size - count
+            if newDronesCount >= previousFertility then
+                break
+            end
         end
     end
     bot.inventoryLabel = previousLabel
@@ -317,11 +344,14 @@ function M.checkMutationEnvironment(mutation)
 end
 
 function M.destruct()
-    --setupApiary(0, 0, nil)
+    setupApiary(0)
     for _,slot in ipairs(bot.getItemsWithLabel("apiary.apiculture")) do
         robot.select(slot)
         upgrade_me.sendItems()
     end
+    bot.moveYTo(2)
+    bot.moveXZTo(0,0)
+    bot.moveYTo(1)
 end
 
 return M

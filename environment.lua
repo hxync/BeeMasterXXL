@@ -1,6 +1,11 @@
 local M = {}
 
-function M.getTemperatureLevel(temperature)
+function M.getTemperatureLevel(temperature, biomeTypes)
+    for _, biomeType in ipairs(biomeTypes) do
+        if biomeType == "nether" then
+            return 3 --地狱
+        end
+    end
     if temperature <= 0 then
         return -2 --严寒
     elseif temperature < 0.35 then
@@ -9,10 +14,8 @@ function M.getTemperatureLevel(temperature)
         return 0 --一般
     elseif temperature <= 1 then
         return 1 --温暖
-    elseif temperature < 1.5 then
-        return 2 --炙热
     else
-        return 3 --地狱
+        return 2 --炙热
     end
 end
 

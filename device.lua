@@ -65,4 +65,8 @@ function M.checkMutationEnvironment(mutation)
     return apiary.checkMutationEnvironment(mutation)
 end
 
+function M.destruct()
+    apiary.destruct()
+end
+
 return M

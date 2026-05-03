@@ -73,7 +73,11 @@ function M.getTargetGenes(species)
             caveDwelling = true
         }
     else
-        if species == "forestry.speciesCommon" then
+        if species == "forestry.speciesWintry" then
+            return {species = "forestry.speciesWintry",speed = 2,lifespan = 3,fertility = 4,flowering = 1,flowerProvider = "extrabees.flower.rock",territory = 1,effect = "forestry.effectGlacial",temperatureTolerance = "BOTH_5",humidityTolerance = "BOTH_5",nocturnal = true,tolerantFlyer = true,caveDwelling = true}
+        elseif species == "extrabees.species.rock" then
+            return {species = "extrabees.species.rock",speed = 2,lifespan = 3,fertility = 4,flowering = 1,flowerProvider = "extrabees.flower.rock",territory = 1,effect = "forestry.effectNone",temperatureTolerance = "BOTH_5",humidityTolerance = "BOTH_5",nocturnal = true,tolerantFlyer = true,caveDwelling = true}
+        elseif species == "forestry.speciesCommon" then
             return {species = "forestry.speciesCommon",speed = 2,lifespan = 2,fertility = 4,flowering = 1,flowerProvider = "extrabees.flower.rock",territory = 1,effect = "forestry.effectNone",temperatureTolerance = "BOTH_5",humidityTolerance = "BOTH_5",nocturnal = true,tolerantFlyer = true,caveDwelling = true}
         elseif species == "forestry.speciesCultivated" then
             return {species = "forestry.speciesCultivated",speed = 5,lifespan = 1,fertility = 4,flowering = 1,flowerProvider = "extrabees.flower.rock",territory = 1,effect = "forestry.effectNone",temperatureTolerance = "BOTH_5",humidityTolerance = "BOTH_5",nocturnal = true,tolerantFlyer = true,caveDwelling = true}
@@ -200,18 +204,18 @@ local function isPrincessAvailable(tag)
 end
 
 function M.getPrincessTag(isNatural)
-    if isNatural and data.usingPrincessTag and bot.checkItem({tag=data.usingPrincessTag}) then
+    if isNatural and data.usingPrincessTag and bot.checkItem({name="Forestry:beePrincessGE",tag=data.usingPrincessTag}) then
         return data.usingPrincessTag
     end
     local princess = doUntil(function()
         local princessList = upgrade_me.getItemsInNetwork({name = "Forestry:beePrincessGE"})
         for _, p in pairs(princessList) do
-            if p.individual.isNatural == isNatural and isPrincessAvailable(p.tag) then
+            if p.individual.isNatural == (isNatural == true) and isPrincessAvailable(p.tag) then
                 return p
             end
         end
         for _, item in pairs(bot.inventory) do
-            if item and item.name == "Forestry:beePrincessGE" and item.isNatural == isNatural and isPrincessAvailable(item.tag) then
+            if item and item.name == "Forestry:beePrincessGE" and item.isNatural == (isNatural == true) and isPrincessAvailable(item.tag) then
                 return item
             end
         end
@@ -225,10 +229,10 @@ function M.getPrincessTag(isNatural)
 end
 
 function M.getAssistantBeesTag()
-    if not data.assistantDroneTag or not bot.checkItem({tag = data.assistantDroneTag}) then
+    if not data.assistantDroneTag or not bot.checkItem({name = "Forestry:beeDroneGE", tag = data.assistantDroneTag}) then
         error("尚未设置辅助雄蜂")
     end
-    if not data.assistantPrincessTag or not bot.checkItem({tag = data.assistantPrincessTag}) then
+    if not data.assistantPrincessTag or not bot.checkItem({name = "Forestry:beePrincessGE", tag = data.assistantPrincessTag}) then
         return data.assistantDroneTag
     end
     return data.assistantDroneTag, data.assistantPrincessTag
