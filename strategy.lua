@@ -1178,8 +1178,10 @@ function M.initialize()--初始化至田野蜂以制造样板蜂
     if not drone1Slot then
         error("初始化失败")
     end
-    robot.select(wintryDroneSlot)
-    upgrade_me.sendItems()
+    if bot.inventory[wintryDroneSlot] and wintryDroneSlot ~= drone1Slot then
+        robot.select(wintryDroneSlot)
+        upgrade_me.sendItems()
+    end
     --夜行、穴居、耐雨、石头采蜜的石头蜂
     local drone2Slot = doUntil(function()
         return bot.checkItem({name="Forestry:beeDroneGE",tag=
