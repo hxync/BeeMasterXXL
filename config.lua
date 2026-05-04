@@ -17,5 +17,5 @@ return{
         [15] = 0,
         [16] = 0,
     },
-    ["worldAccelerator_tier"] = 8
+    ["worldAccelerator_tier"] = 5
 }
