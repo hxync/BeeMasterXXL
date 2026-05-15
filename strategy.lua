@@ -217,8 +217,9 @@ function M.purify(princessSlot, droneSlot, targetGenes, assistantDroneSlot, labe
         local gene = bot.inventory[princessSlot][chromosome]
         --校验目标基因是否存在
         if gene[1] ~= targetGenes[chromosome] and gene[2] ~= targetGenes[chromosome] and bot.inventory[droneSlot][chromosome][1] ~= targetGenes[chromosome] and bot.inventory[droneSlot][chromosome][2] ~= targetGenes[chromosome] 
-        and bot.inventory[assistantDroneSlot][chromosome][1] ~= targetGenes[chromosome] and bot.inventory[assistantDroneSlot][chromosome][2] ~= targetGenes[chromosome] or bot.inventory[assistantDroneSlot][chromosome][1] ~= bot.inventory[assistantDroneSlot][chromosome][2] then
-            error("错误的调用strategy("..tostring(princessSlot)..","..tostring(droneSlot)..","..tostring(chromosome).."="..tostring(targetGenes[chromosome])..")")
+        --and bot.inventory[assistantDroneSlot][chromosome][1] ~= targetGenes[chromosome] and bot.inventory[assistantDroneSlot][chromosome][2] ~= targetGenes[chromosome] or bot.inventory[assistantDroneSlot][chromosome][1] ~= bot.inventory[assistantDroneSlot][chromosome][2] then
+        and bot.inventory[assistantDroneSlot][chromosome][1] ~= targetGenes[chromosome] and bot.inventory[assistantDroneSlot][chromosome][2] ~= targetGenes[chromosome] then--初始凛冬雄蜂不纯合的临时解决方案，就这么先跑着吧，哪天出问题了再改
+            error("错误的调用strategy.purify("..tostring(princessSlot)..","..tostring(droneSlot)..","..tostring(chromosome).."="..tostring(targetGenes[chromosome])..")")
         --分类
         elseif chromosome ~= "fertility" and not(gene[1] == targetGenes[chromosome] and gene[2] == targetGenes[chromosome] and bot.inventory[droneSlot][chromosome][1] == targetGenes[chromosome]
         and bot.inventory[droneSlot][chromosome][2] == targetGenes[chromosome] and bot.inventory[assistantDroneSlot][chromosome][1] == targetGenes[chromosome]) then
